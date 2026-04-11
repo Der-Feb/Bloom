@@ -20,12 +20,12 @@ public class EmployeeResource {
         this.employeeService = employeeService;
     }
 
-    @GetMapping
+    @GetMapping("/")
     public ResponseEntity<String> checkHealthy() {
         return new ResponseEntity<>("Healthy", HttpStatus.OK);
     }
 
-    @GetMapping("all")
+    @GetMapping("/all")
     public ResponseEntity<List<Employee>> getAllEmployees() {
         List<Employee> employees = employeeService.findAllEmployee();
         return new ResponseEntity<>(employees, HttpStatus.OK);
