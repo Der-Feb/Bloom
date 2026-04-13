@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { IEmployee } from "../employee";
 import { EmployeeService } from "../employee.service";
 import { HttpErrorResponse } from "@angular/common/http";
@@ -6,76 +6,115 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 
 @Component({
-    selector: 'app-root',
-    standalone: true,
-    imports: [
-        CommonModule, 
-        FormsModule
-    ],
-    templateUrl: './ui.component.html',
-    styleUrls: ['./ui.component.css']
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './ui.component.html',
+  styleUrls: ['./ui.component.css'],
+  template: `
+    <h1>Testing</h1>
+  `
 })
 export class UIComponent implements OnInit {
-    public employees: IEmployee[] = [];
 
-    public editEmployee: IEmployee | null = null;
-    public deleteEmployee: IEmployee | null = null;
+  public employees: IEmployee[] = [];
+  private allEmployees: IEmployee[] = [];
+  public isLoaded = false;
 
-    constructor(private employeeService: EmployeeService) {}
+  public editEmployee: IEmployee | null = null;
+  public deleteEmployee: IEmployee | null = null;
 
-    ngOnInit(): void {
-        this.getEmployees();
+  constructor(
+    private employeeService: EmployeeService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.getEmployees();
+  }
+
+  public getEmployees(): void {
+    this.isLoaded = false;
+
+    this.employeeService.getEmployees().subscribe(
+      (response: IEmployee[]) => {
+        this.allEmployees = response;
+        this.employees = response;
+        this.isLoaded = true;
+        this.cdr.detectChanges();
+      },
+      (error: HttpErrorResponse) => {
+        console.error(error);
+        this.isLoaded = true;
+        this.cdr.detectChanges();
+      }
+    );
+  }
+
+  public searchEmployees(key: string): void {
+    if (!key || key.trim() === '') {
+      this.employees = this.allEmployees;
+      return;
     }
 
-    public getEmployees(): void {
-        this.employeeService.getEmployees().subscribe(
-            (response: IEmployee[]) => {
-                console.log(response);
-                this.employees = response;
-            },
-            (error: HttpErrorResponse) => {
-                console.log(error);
-            }
-        )
+    const lowerKey = key.toLowerCase();
+
+    this.employees = this.allEmployees.filter(emp =>
+      emp.name.toLowerCase().includes(lowerKey) ||
+      emp.email.toLowerCase().includes(lowerKey) ||
+      emp.phone.toLowerCase().includes(lowerKey) ||
+      emp.jobTitle.toLowerCase().includes(lowerKey)
+    );
+  }
+
+  public onOpenModal(employee: IEmployee | null, mode: string): void {
+
+    this.editEmployee = null;
+    this.deleteEmployee = null;
+
+    const container = document.getElementById('main-container');
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.style.display = 'none';
+    button.setAttribute('data-bs-toggle', 'modal');
+
+    if (mode === 'add') {
+      button.setAttribute('data-bs-target', '#addEmployeeModal');
     }
 
-    public onOpenModal(employee: any, mode: string): void {
-        const container = document.getElementById('main-container');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.style.display = 'none';
-        button.setAttribute('data-bs-toggle', 'modal');
-
-        if (mode === 'add') {
-            button.setAttribute('data-bs-target', '#addEmployeeModal');
-        }
-        if (mode === 'edit') {
-            this.editEmployee = employee; // You'll need a variable for this
-            button.setAttribute('data-bs-target', '#updateEmployeeModal');
-        }
-        if (mode === 'delete') {
-            this.deleteEmployee = employee; // And this
-            button.setAttribute('data-bs-target', '#deleteEmployeeModal');
-        }
-
-        container?.appendChild(button);
-        button.click();
+    if (mode === 'edit' && employee) {
+      this.editEmployee = { ...employee };
+      button.setAttribute('data-bs-target', '#updateEmployeeModal');
     }
 
-    public searchEmployees(key: string): void {
-        const results: IEmployee[] = [];
-        for (const employee of this.employees) {
-            if (employee.name.toLowerCase().indexOf(key.toLowerCase()) !== -1
-            || employee.email.toLowerCase().indexOf(key.toLowerCase()) !== -1
-            || employee.phone.toLowerCase().indexOf(key.toLowerCase()) !== -1
-            || employee.jobTitle.toLowerCase().indexOf(key.toLowerCase()) !== -1) {
-            results.push(employee);
-            }
-        }
-        this.employees = results;
-        if (results.length === 0 || !key) {
-            this.getEmployees(); // Reset the list if search is empty or no results
-        }
+    if (mode === 'delete' && employee) {
+      this.deleteEmployee = employee;
+      button.setAttribute('data-bs-target', '#deleteEmployeeModal');
     }
 
+    container?.appendChild(button);
+    button.click();
+  }
+
+  public onAddEmployee(addForm: any): void {
+    this.employeeService.addEmployee(addForm.value).subscribe(
+      () => this.getEmployees(),
+      (error: HttpErrorResponse) => alert(error.message)
+    );
+  }
+
+  public onUpdateEmployee(employee: IEmployee): void {
+    this.employeeService.updateEmployee(employee).subscribe(
+      () => this.getEmployees(),
+      (error: HttpErrorResponse) => alert(error.message)
+    );
+  }
+
+  public onDeleteEmployee(employeeId: number): void {
+    this.employeeService.deleteEmployee(employeeId).subscribe(
+      () => this.getEmployees(),
+      (error: HttpErrorResponse) => alert(error.message)
+    );
+  }
 }
