@@ -1,21 +1,24 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <a class="navbar-brand" style="color:white;">Employee Manager</a>
-  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+  <div class="container-fluid">
+    <a class="navbar-brand" style="color:white;">Employee Manager</a>
 
-  <div class="collapse navbar-collapse" id="navbarColor02">
-    <ul class="navbar-nav me-auto">
-      <li class="nav-item">
-        <a class="nav-link" style="cursor: pointer;" (click)="onOpenModal(null, 'add')">Add Employee</a>
-      </li>
-    </ul>
-    <form class="d-flex my-2 my-lg-0">
-      <input type="search" #key="ngModel" ngModel name="key" (ngModelChange)="searchEmployees(key.value)" 
-             id="searchName" class="form-control me-sm-2" placeholder="Search employees...">
-    </form>
+    <div class="collapse navbar-collapse" id="navbarColor02">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" style="cursor: pointer;" (click)="onOpenModal(null, 'add')">
+            Add Employee
+          </a>
+        </li>
+      </ul>
+
+      <form class="d-flex my-2 my-lg-0">
+        <input type="search"
+               #key
+               (input)="searchEmployees(key.value)"
+               class="form-control me-sm-2"
+               placeholder="Search employees...">
+      </form>
+    </div>
   </div>
 </nav>
 
@@ -23,53 +26,146 @@
   <div class="row">
     <div *ngFor="let employee of employees" class="col-md-6 col-xl-3">
       <div class="card m-b-30 shadow-sm mt-3">
+
         <div class="card-body row">
           <div class="col-6">
-            <a href="#"><img src="{{employee?.imageUrl}}" alt="" class="img-fluid rounded-circle w-60"></a>
+            <img [src]="employee.imageUrl" class="img-fluid rounded-circle w-60">
           </div>
+
           <div class="col-6 card-title align-self-center mb-0">
-            <h5>{{employee?.name}}</h5>
-            <p class="m-0 text-muted small">{{employee?.jobTitle}}</p>
+            <h5>{{ employee.name }}</h5>
+            <p class="m-0 text-muted small">{{ employee.jobTitle }}</p>
           </div>
         </div>
+
         <ul class="list-group list-group-flush">
-          <li class="list-group-item"><i class="fa fa-envelope float-end"></i>{{employee?.email}}</li>
-          <li class="list-group-item"><i class="fa fa-phone float-end"></i>Phone : {{employee?.phone}}</li>
+          <li class="list-group-item">
+            <i class="fa fa-envelope float-end"></i>
+            {{ employee.email }}
+          </li>
+
+          <li class="list-group-item">
+            <i class="fa fa-phone float-end"></i>
+            {{ employee.phone }}
+          </li>
         </ul>
+
         <div class="card-body">
           <div class="float-end btn-group btn-group-sm">
-            <a (click)="onOpenModal(employee, 'edit')" class="btn btn-primary text-white" title="Edit"><i class="fa fa-pencil"></i></a>
-            <a (click)="onOpenModal(employee, 'delete')" class="btn btn-secondary text-white" title="Delete"><i class="fa fa-times"></i></a>
+            <a (click)="onOpenModal(employee, 'edit')" class="btn btn-primary text-white">
+              <i class="fa fa-pencil"></i>
+            </a>
+
+            <a (click)="onOpenModal(employee, 'delete')" class="btn btn-secondary text-white">
+              <i class="fa fa-times"></i>
+            </a>
           </div>
-          <ul class="social-links list-inline mb-0">
-            <li class="list-inline-item"><a href="#"><i class="fa fa-facebook-f"></i></a></li>
-            <li class="list-inline-item"><a href="#"><i class="fa fa-twitter"></i></a></li>
-            <li class="list-inline-item"><a href="#"><i class="fa fa-skype"></i></a></li>
-          </ul>
         </div>
+
       </div>
     </div>
-  </div>
-  
-  <div *ngIf="employees?.length === 0" class="col-lg-12 col-md-12 col-xl-12">
-      <div class="alert alert-info" role="alert">
-          <h4 class="alert-heading">NO EMPLOYEES!</h4>
-          <p>No Employees were found.</p>
+
+    <!-- NO EMPLOYEES -->
+    <div *ngIf="isLoaded && employees.length === 0" class="col-lg-12 mt-4">
+      <div class="alert alert-info">
+        <h4>NO EMPLOYEES!</h4>
+        <p>No Employees were found.</p>
       </div>
+    </div>
+
+    <!-- LOADING -->
+    <div *ngIf="!isLoaded" class="text-center mt-5">
+      <h4>Loading employees...</h4>
+    </div>
+
   </div>
 </div>
 
-
-<div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+<!-- add -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1">
+  <div class="modal-dialog">
     <div class="modal-content">
-       <div class="modal-header">
-          <h5 class="modal-header" id="addEmployeeModalLabel">Add Employee</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-       </div>
-       <div class="modal-body">
-          <p>Form coming soon...</p>
-       </div>
+
+      <div class="modal-header">
+        <h5 class="modal-title">Add Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form #addForm="ngForm" (ngSubmit)="onAddEmployee(addForm)">
+
+          <input type="text" name="name" ngModel class="form-control mb-2" placeholder="Name" required>
+          <input type="email" name="email" ngModel class="form-control mb-2" placeholder="Email" required>
+          <input type="text" name="phone" ngModel class="form-control mb-2" placeholder="Phone" required>
+          <input type="text" name="jobTitle" ngModel class="form-control mb-2" placeholder="Job Title" required>
+          <input type="text" name="imageUrl" ngModel class="form-control mb-2" placeholder="Image URL">
+
+          <button type="submit" data-bs-dismiss="modal" class="btn btn-primary w-100">
+            Add
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- update -->
+<div class="modal fade" id="updateEmployeeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Update Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="editEmployee">
+
+        <form (ngSubmit)="onUpdateEmployee(editEmployee)">
+
+          <input type="hidden" [(ngModel)]="editEmployee.id" name="id">
+
+          <input type="text" [(ngModel)]="editEmployee.name" name="name" class="form-control mb-2">
+          <input type="email" [(ngModel)]="editEmployee.email" name="email" class="form-control mb-2">
+          <input type="text" [(ngModel)]="editEmployee.phone" name="phone" class="form-control mb-2">
+          <input type="text" [(ngModel)]="editEmployee.jobTitle" name="jobTitle" class="form-control mb-2">
+
+          <button type="submit" data-bs-dismiss="modal" class="btn btn-success w-100">
+            Update
+          </button>
+
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- delete -->
+<div class="modal fade" id="deleteEmployeeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Delete Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center" *ngIf="deleteEmployee">
+
+        <p>Are you sure you want to delete <b>{{ deleteEmployee.name }}</b>?</p>
+
+        <button class="btn btn-danger"
+                data-bs-dismiss="modal"
+                (click)="onDeleteEmployee(deleteEmployee.id)">
+          Yes, Delete
+        </button>
+
+      </div>
+
     </div>
   </div>
 </div>

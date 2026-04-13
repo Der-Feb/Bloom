@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/employee")
+@SuppressWarnings("unused")
 public class EmployeeResource {
 
     private final EmployeeService employeeService;
@@ -45,7 +46,7 @@ public class EmployeeResource {
 
     @PutMapping("/")
     public ResponseEntity<Employee> updateEmployee(@RequestBody Employee employee) {
-        Employee newEmployee = employeeService.addEmployee(employee);
+        Employee newEmployee = employeeService.updateEmployee(employee);
         return new ResponseEntity<>(newEmployee, HttpStatus.OK);
     }
 
