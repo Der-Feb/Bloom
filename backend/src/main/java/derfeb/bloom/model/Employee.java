@@ -1,61 +1,50 @@
 package derfeb.bloom.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
 @Entity
-@SuppressWarnings("unused")
+@Builder
+@Accessors(chain = true)
+@Table(
+    name= "employees",
+    uniqueConstraints = {
+        @UniqueConstraint(name= "st_email", columnNames = "email")
+    }
+)
 public class Employee implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false)
-    private Long id;
+    private String id;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
 
     private String name;
-
-    private String email;
     private String phone;
     private String jobTitle;
     private String imageUrl;
+
     @Column(nullable = false, updatable = false)
     private String employeeCode;
 
-    public Employee() {
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
-    public Employee(String name, String email, String phone, String jobTitle, String imageUrl, String employeeCode) {
-        this.name = name;
-        this.email = email;
-        this.jobTitle = jobTitle;
-        this.phone = phone;
-        this.imageUrl = imageUrl;
-        this.employeeCode = employeeCode;
-    }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPhone() { return phone;}
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getJobTitle() { return jobTitle; }
-    public void setJobTitle(String jobTitle) { this.jobTitle = jobTitle; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public String getEmployeeCode() {
-        return employeeCode;
-    }
-
-    public void setEmployeeCode(String employeeCode) {
-        this.employeeCode = employeeCode;
-    }
+    @Column()
+    private boolean isActive = false;
 }
