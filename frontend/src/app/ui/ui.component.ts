@@ -1,7 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { IEmployee } from "../employee";
 import { EmployeeService } from "../employee.service";
-import { HttpErrorResponse } from "@angular/common/http";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 
@@ -10,111 +9,96 @@ import { FormsModule } from "@angular/forms";
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './ui.component.html',
-  styleUrls: ['./ui.component.css'],
-  template: `
-    <h1>Testing</h1>
-  `
+  styleUrls: ['./ui.component.css']
 })
 export class UIComponent implements OnInit {
 
-  public employees: IEmployee[] = [];
-  private allEmployees: IEmployee[] = [];
-  public isLoaded = false;
+  employees: IEmployee[] = [];
 
-  public editEmployee: IEmployee | null = null;
-  public deleteEmployee: IEmployee | null = null;
+  jobTitles: string[] = [];
 
-  constructor(
-    private employeeService: EmployeeService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  currentPage = 0;
+  totalPages = 0;
+  pageSize = 5;
+
+  keyword = '';
+  selectedJobTitle = '';
+
+  sortBy = 'id';
+  direction = 'asc';
+
+  isLoaded = false;
+
+  constructor(private employeeService: EmployeeService) {}
 
   ngOnInit(): void {
-    this.getEmployees();
+    this.loadEmployees();
+    this.loadJobTitles();
   }
 
-  public getEmployees(): void {
+  loadEmployees(): void {
+
     this.isLoaded = false;
 
-    this.employeeService.getEmployees().subscribe(
-      (response: IEmployee[]) => {
-        this.allEmployees = response;
-        this.employees = response;
-        this.isLoaded = true;
-        this.cdr.detectChanges();
-      },
-      (error: HttpErrorResponse) => {
-        console.error(error);
-        this.isLoaded = true;
-        this.cdr.detectChanges();
-      }
-    );
+    this.employeeService.getEmployees(
+      this.currentPage,
+      this.pageSize,
+      this.keyword,
+      this.selectedJobTitle,
+      this.sortBy,
+      this.direction
+    ).subscribe(response => {
+
+      this.employees = response.content;
+      this.totalPages = response.totalPages;
+
+      this.isLoaded = true;
+    });
   }
 
-  public searchEmployees(key: string): void {
-    if (!key || key.trim() === '') {
-      this.employees = this.allEmployees;
+  loadJobTitles(): void {
+    this.employeeService.getJobTitles()
+      .subscribe(response => {
+        this.jobTitles = response;
+      });
+  }
+
+  search(): void {
+    this.currentPage = 0;
+    this.loadEmployees();
+  }
+
+  changePage(page: number): void {
+
+    if (page < 0 || page >= this.totalPages) {
       return;
     }
 
-    const lowerKey = key.toLowerCase();
+    this.currentPage = page;
 
-    this.employees = this.allEmployees.filter(emp =>
-      emp.name.toLowerCase().includes(lowerKey) ||
-      emp.email.toLowerCase().includes(lowerKey) ||
-      emp.phone.toLowerCase().includes(lowerKey) ||
-      emp.jobTitle.toLowerCase().includes(lowerKey)
-    );
+    this.loadEmployees();
   }
 
-  public onOpenModal(employee: IEmployee | null, mode: string): void {
+  sort(field: string): void {
 
-    this.editEmployee = null;
-    this.deleteEmployee = null;
-
-    const container = document.getElementById('main-container');
-    const button = document.createElement('button');
-
-    button.type = 'button';
-    button.style.display = 'none';
-    button.setAttribute('data-bs-toggle', 'modal');
-
-    if (mode === 'add') {
-      button.setAttribute('data-bs-target', '#addEmployeeModal');
+    if (this.sortBy === field) {
+      this.direction =
+        this.direction === 'asc'
+          ? 'desc'
+          : 'asc';
+    } else {
+      this.sortBy = field;
+      this.direction = 'asc';
     }
 
-    if (mode === 'edit' && employee) {
-      this.editEmployee = { ...employee };
-      button.setAttribute('data-bs-target', '#updateEmployeeModal');
-    }
-
-    if (mode === 'delete' && employee) {
-      this.deleteEmployee = employee;
-      button.setAttribute('data-bs-target', '#deleteEmployeeModal');
-    }
-
-    container?.appendChild(button);
-    button.click();
+    this.loadEmployees();
   }
 
-  public onAddEmployee(addForm: any): void {
-    this.employeeService.addEmployee(addForm.value).subscribe(
-      () => this.getEmployees(),
-      (error: HttpErrorResponse) => alert(error.message)
-    );
-  }
+  clearFilters(): void {
 
-  public onUpdateEmployee(employee: IEmployee): void {
-    this.employeeService.updateEmployee(employee).subscribe(
-      () => this.getEmployees(),
-      (error: HttpErrorResponse) => alert(error.message)
-    );
-  }
+    this.keyword = '';
+    this.selectedJobTitle = '';
 
-  public onDeleteEmployee(employeeId: number): void {
-    this.employeeService.deleteEmployee(employeeId).subscribe(
-      () => this.getEmployees(),
-      (error: HttpErrorResponse) => alert(error.message)
-    );
+    this.loadEmployees();
   }
 }
