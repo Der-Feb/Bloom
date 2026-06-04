@@ -1,138 +1,281 @@
 <div class="container mt-4">
-
   <h2 class="mb-4">Employee Manager</h2>
 
-  <!-- FILTERS -->
   <div class="row mb-3">
-
     <div class="col-md-4">
       <input
         type="text"
         class="form-control"
         placeholder="Search by name or email"
         [(ngModel)]="keyword"
-        (input)="search()">
+        (input)="search()"
+      />
     </div>
 
     <div class="col-md-3">
-      <select
-        class="form-select"
-        [(ngModel)]="selectedJobTitle"
-        (change)="search()">
-
+      <select class="form-select" [(ngModel)]="selectedJobTitle" (change)="search()">
         <option value="">All Job Titles</option>
-
-        <option
-          *ngFor="let title of jobTitles"
-          [value]="title">
-
-          {{ title }}
-
-        </option>
-
+        <option *ngFor="let title of jobTitles" [value]="title">{{ title }}</option>
       </select>
     </div>
 
     <div class="col-md-2">
-      <button
-        class="btn btn-secondary w-100"
-        (click)="clearFilters()">
-
-        Clear
-
-      </button>
+      <button class="btn btn-secondary w-100" (click)="clearFilters()">Clear</button>
     </div>
 
+    <div class="col-md-3 text-end">
+      <button class="btn btn-primary w-100" (click)="openAddModal()">+ Add Employee</button>
+    </div>
   </div>
 
-  <!-- TABLE -->
-  <table class="table table-bordered table-hover">
-
-    <thead class="table-dark">
-
-      <tr>
-
-        <th (click)="sort('id')">
-          ID
-        </th>
-
-        <th (click)="sort('name')">
-          Name
-        </th>
-
-        <th (click)="sort('email')">
-          Email
-        </th>
-
-        <th (click)="sort('phone')">
-          Phone
-        </th>
-
-        <th (click)="sort('jobTitle')">
-          Job Title
-        </th>
-
-      </tr>
-
-    </thead>
-
-    <tbody>
-
-      <tr *ngFor="let employee of employees">
-
-        <td>{{ employee.id }}</td>
-        <td>{{ employee.name }}</td>
-        <td>{{ employee.email }}</td>
-        <td>{{ employee.phone }}</td>
-        <td>{{ employee.jobTitle }}</td>
-
-      </tr>
-
-    </tbody>
-
-  </table>
-
-  <!-- LOADING -->
-  <div *ngIf="!isLoaded" class="text-center mt-3">
-    Loading...
+  <!-- Spinner -->
+  <div *ngIf="!isLoaded" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading profiles...</span>
+    </div>
+    <p class="mt-2 text-muted">Loading profiles...</p>
   </div>
 
-  <!-- EMPTY -->
-  <div
-    *ngIf="isLoaded && employees.length === 0"
-    class="alert alert-info">
+  <!-- Main content -->
+  <div *ngIf="isLoaded">
+    <table class="table table-bordered table-hover" *ngIf="employees.length > 0">
+      <thead class="table-dark">
+        <tr>
+          <th (click)="sort('id')" style="cursor: pointer">
+            ID <span>{{ sortBy === 'id' ? (direction === 'asc' ? '▲' : '▼') : '' }}</span>
+          </th>
+          <th>Avatar</th>
+          <th (click)="sort('name')" style="cursor: pointer">
+            Name <span>{{ sortBy === 'name' ? (direction === 'asc' ? '▲' : '▼') : '' }}</span>
+          </th>
+          <th (click)="sort('email')" style="cursor: pointer">
+            Email <span>{{ sortBy === 'email' ? (direction === 'asc' ? '▲' : '▼') : '' }}</span>
+          </th>
+          <th (click)="sort('phone')" style="cursor: pointer">
+            Phone <span>{{ sortBy === 'phone' ? (direction === 'asc' ? '▲' : '▼') : '' }}</span>
+          </th>
+          <th (click)="sort('jobTitle')" style="cursor: pointer">
+            Job Title
+            <span>{{ sortBy === 'jobTitle' ? (direction === 'asc' ? '▲' : '▼') : '' }}</span>
+          </th>
+          <th>Role</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let employee of employees">
+          <td>{{ employee.id }}</td>
+          <td>
+            <img
+              *ngIf="employee.imageUrl"
+              [src]="employee.imageUrl"
+              alt="profile"
+              style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover"
+            />
+          </td>
+          <td>{{ employee.name }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.phone }}</td>
+          <td>{{ employee.jobTitle }}</td>
+          <td>
+            <span
+              class="badge"
+              [ngClass]="employee.role === 'ROLE_MANAGER' ? 'bg-warning text-dark' : 'bg-secondary'"
+            >
+              {{ employee.role === 'ROLE_MANAGER' ? 'Manager' : 'Employee' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="employee.active ? 'bg-success' : 'bg-danger'">
+              {{ employee.active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="openEditModal(employee)">
+              Edit
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="openDeleteModal(employee)">
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    No employees found.
+    <div *ngIf="hasSearched && employees.length === 0" class="alert alert-info mt-3 text-center">
+      No employees found matching standard records.
+    </div>
 
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 0" class="d-flex justify-content-center gap-2 mt-3">
+      <button
+        class="btn btn-outline-primary"
+        (click)="changePage(currentPage - 1)"
+        [disabled]="currentPage === 0"
+      >
+        Previous
+      </button>
+
+      <span class="align-self-center">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+
+      <button
+        class="btn btn-outline-primary"
+        (click)="changePage(currentPage + 1)"
+        [disabled]="currentPage + 1 >= totalPages"
+      >
+        Next
+      </button>
+    </div>
   </div>
+</div>
 
-  <!-- PAGINATION -->
-  <div class="d-flex justify-content-center gap-2 mt-3">
-
-    <button
-      class="btn btn-outline-primary"
-      (click)="changePage(currentPage - 1)">
-
-      Previous
-
-    </button>
-
-    <span class="align-self-center">
-
-      Page {{ currentPage + 1 }}
-      of
-      {{ totalPages }}
-
-    </span>
-
-    <button
-      class="btn btn-outline-primary"
-      (click)="changePage(currentPage + 1)">
-
-      Next
-
-    </button>
-
+<!-- ===================== ADD MODAL ===================== -->
+<div
+  class="modal fade"
+  id="addModal"
+  tabindex="-1"
+  aria-labelledby="addModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.name" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" [(ngModel)]="formEmployee.email" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" [(ngModel)]="formEmployee.password" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.phone" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Job Title</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.jobTitle" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Image URL</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.imageUrl" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Role</label>
+          <select class="form-select" [(ngModel)]="formEmployee.role">
+            <option value="ROLE_EMPLOYEE">Employee</option>
+            <option value="ROLE_MANAGER">Manager</option>
+          </select>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="addActive"
+            [(ngModel)]="formEmployee.active"
+          />
+          <label class="form-check-label" for="addActive">Active</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="submitAdd()">Add Employee</button>
+      </div>
+    </div>
   </div>
+</div>
 
+<!-- ===================== EDIT MODAL ===================== -->
+<div
+  class="modal fade"
+  id="editModal"
+  tabindex="-1"
+  aria-labelledby="editModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Edit Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.name" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" [(ngModel)]="formEmployee.email" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.phone" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Job Title</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.jobTitle" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Image URL</label>
+          <input type="text" class="form-control" [(ngModel)]="formEmployee.imageUrl" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Role</label>
+          <select class="form-select" [(ngModel)]="formEmployee.role">
+            <option value="ROLE_EMPLOYEE">Employee</option>
+            <option value="ROLE_MANAGER">Manager</option>
+          </select>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="editActive"
+            [(ngModel)]="formEmployee.active"
+          />
+          <label class="form-check-label" for="editActive">Active</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="submitEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRM MODAL ===================== -->
+<div
+  class="modal fade"
+  id="deleteModal"
+  tabindex="-1"
+  aria-labelledby="deleteModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <strong>{{ selectedEmployee?.name }}</strong
+        >? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="submitDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
 </div>
