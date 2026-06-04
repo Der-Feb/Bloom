@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-
 import java.io.Serializable;
 
 @NoArgsConstructor
@@ -15,19 +14,13 @@ import java.io.Serializable;
 @Entity
 @Builder
 @Accessors(chain = true)
-@Table(
-    name= "employees",
-    uniqueConstraints = {
-        @UniqueConstraint(name= "st_email", columnNames = "email")
-    }
-)
+@Table(name = "employee")
 public class Employee implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(nullable = false, updatable = false)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Back to Long! This creates a clean auto-incrementing bigint column
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -45,6 +38,6 @@ public class Employee implements Serializable {
     @Column(nullable = false)
     private Role role;
 
-    @Column()
+    @Builder.Default 
     private boolean isActive = false;
 }
