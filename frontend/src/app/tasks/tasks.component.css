@@ -1,51 +1,21 @@
-.badge {
-  font-size: 0.85rem;
-  padding: 0.5em 0.75em;
-  border-radius: 6px;
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.table th {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  color: #6c757d;
-  border-top: none;
-}
-
-.table td {
-  vertical-align: middle;
-  color: #495057;
-}
-
-.card {
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 12px;
-  overflow: hidden;
+  color: white;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btn-sm {
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
+.btn-gradient-primary:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
 }
 
-.form-control,
-.form-select {
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  padding: 0.6rem 0.8rem;
-}
-
-.form-control:focus,
-.form-select:focus {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-  border-color: #86b7fe;
-}
-
-.table-hover tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.toast {
-  border-radius: 10px;
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }

@@ -84,23 +84,48 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   loadTasks(): void {
     const keyword = this.keyword.trim();
+    console.log('[TasksComponent] Loading tasks with:', {
+      keyword,
+      selectedStatus: this.selectedStatus,
+      selectedDate: this.selectedDate,
+      selectedEmployeeId: this.selectedEmployeeId,
+      currentPage: this.currentPage,
+      isManager: this.isManager,
+    });
     if (this.isManager) {
       this.taskService
-        .getAllTasks(keyword, this.selectedStatus, this.selectedDate, this.selectedEmployeeId)
+        .getAllTasks(keyword, this.selectedStatus, this.selectedDate, this.selectedEmployeeId, this.currentPage, this.pageSize)
+        .pipe(takeUntil(this.destroy$))
         .subscribe((res) => {
-          this.tasks = res.content || [];
+          console.log('[TasksComponent] Loaded tasks:', res);
+          this.tasks = [...(res.content || [])];
+          this.totalPages = res.totalPages || 0;
+          this.totalElements = res.totalElements || 0;
+          this.cdr.detectChanges();
         });
     } else if (this.currentUser?.id) {
       this.taskService
-        .getTasksByEmployee(this.currentUser.id, keyword, this.selectedStatus, this.selectedDate)
+        .getTasksByEmployee(this.currentUser.id, keyword, this.selectedStatus, this.selectedDate, this.currentPage, this.pageSize)
+        .pipe(takeUntil(this.destroy$))
         .subscribe((res) => {
-          this.tasks = res.content || [];
+          console.log('[TasksComponent] Loaded employee tasks:', res);
+          this.tasks = [...(res.content || [])];
+          this.totalPages = res.totalPages || 0;
+          this.totalElements = res.totalElements || 0;
+          this.cdr.detectChanges();
         });
     }
   }
 
+  changePage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.loadTasks();
+  }
+
   search(): void {
-    this.searchSubject.next(this.keyword);
+    this.currentPage = 0;
+    this.loadTasks();
   }
 
   clearFilters(): void {
@@ -108,13 +133,27 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.selectedStatus = '';
     this.selectedDate = '';
     this.selectedEmployeeId = '';
+    this.currentPage = 0;
+    this.loadTasks();
+  }
+
+  onPageSizeChange(): void {
+    if (this.pageSize < 1) {
+      this.pageSize = 1;
+    }
+    this.currentPage = 0;
     this.loadTasks();
   }
 
   loadAllEmployees(): void {
-    this.employeeService.getEmployees(0, 100, '', '', 'name', 'asc').subscribe((res) => {
-      this.allEmployees = res.content || [];
-    });
+    console.log('[TasksComponent] Loading all employees...');
+    this.employeeService.getEmployees(0, 100, '', '', 'name', 'asc')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res) => {
+        console.log('[TasksComponent] Loaded all employees:', res);
+        this.allEmployees = [...(res.content || [])];
+        this.cdr.detectChanges();
+      });
   }
 
   openAddModal(): void {
