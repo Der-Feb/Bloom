@@ -41,7 +41,7 @@ export class EmployeeService {
     );
 
     return this.http.get<Page<IEmployee>>(`${this.apiServerUrl}/employee`, { params }).pipe(
-      tap((response) => console.log('[EmployeeService] Fetching employees SUCCESS:', response)),
+      // tap((response) => console.log('[EmployeeService] Fetching employees SUCCESS:', response)),
       catchError((error) => {
         console.error('[EmployeeService] Fetching employees FAILED:', error);
         return throwError(() => error);
