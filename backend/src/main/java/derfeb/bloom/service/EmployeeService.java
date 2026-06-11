@@ -6,6 +6,7 @@ import derfeb.bloom.repo.EmployeeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,14 +17,20 @@ import java.util.UUID;
 @Transactional
 public class EmployeeService {
     private final EmployeeRepo employeeRepo;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public EmployeeService(EmployeeRepo employeeRepo) {
+    public EmployeeService(EmployeeRepo employeeRepo, PasswordEncoder passwordEncoder) {
         this.employeeRepo = employeeRepo;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Employee addEmployee(Employee employee) {
         employee.setEmployeeCode(UUID.randomUUID().toString());
+        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        if (employee.getIsActive() == null) {
+            employee.setIsActive(true);
+        }
         return employeeRepo.save(employee);
     }
 
@@ -46,6 +53,6 @@ public class EmployeeService {
     }
 
     public void deleteEmployee(Long employeeId) {
-        employeeRepo.deleteEmployeeById(employeeId);
+        employeeRepo.deleteById(employeeId);
     }
 }
