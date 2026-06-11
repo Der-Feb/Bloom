@@ -21,7 +21,7 @@ public interface TaskRepo extends JpaRepository<Task, Long> {
            "AND (:status IS NULL OR t.status = :status) " +
            "AND (cast(:date as date) IS NULL OR t.taskDate = :date) " +
            "AND (:employeeId IS NULL " +
-           "     OR (:employeeId = -1 AND t.assignedEmployees IS EMPTY) " +
+           "     OR (:employeeId = -2 AND t.assignedEmployees IS EMPTY) " +
            "     OR (:employeeId > 0 AND EXISTS (SELECT e FROM t.assignedEmployees e WHERE e.id = :employeeId)))")
     Page<Task> findTasksWithFilters(
         @Param("keyword") String keyword, 
