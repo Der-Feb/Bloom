@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { IEmployee } from '../employee';
 import { EmployeeService } from '../employee.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as bootstrap from 'bootstrap';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-ui',
@@ -12,13 +13,13 @@ import * as bootstrap from 'bootstrap';
   templateUrl: './ui.component.html',
   styleUrls: ['./ui.component.css'],
 })
-export class UIComponent implements OnInit {
+export class UIComponent implements OnInit, OnDestroy {
   employees: IEmployee[] = [];
   jobTitles: string[] = [];
 
   currentPage = 0;
   totalPages = 0;
-  pageSize = 5;
+  pageSize = 12;
 
   keyword = '';
   selectedJobTitle = '';
@@ -35,6 +36,8 @@ export class UIComponent implements OnInit {
   toastMessage = '';
   toastType: 'success' | 'danger' = 'success';
 
+  private destroy$ = new Subject<void>();
+
   constructor(
     private employeeService: EmployeeService,
     private cdr: ChangeDetectorRef,
@@ -45,8 +48,14 @@ export class UIComponent implements OnInit {
     this.loadEmployees();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadEmployees(): void {
     this.isLoaded = false;
+    this.cdr.detectChanges();
 
     const searchKeyword = (this.keyword || '').trim();
     const searchJobTitle = this.selectedJobTitle || '';
@@ -60,30 +69,38 @@ export class UIComponent implements OnInit {
         this.sortBy,
         this.direction,
       )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
-          if (response) {
-            this.employees = response.content || [];
-            this.totalPages = response.totalPages || 0;
+        next: (res) => {
+          console.log('[UIComponent] Loaded employees:', res);
+          if (res) {
+            this.employees = [...(res.content || [])];
+            this.totalPages = res.totalPages || 0;
           }
           this.isLoaded = true;
           this.hasSearched = true;
+          this.cdr.detectChanges();
         },
         error: (err) => {
+          console.error('[UIComponent] Error loading employees:', err);
           this.isLoaded = true;
           this.hasSearched = true;
-          console.error('[UIComponent] Error loading employees:', err);
+          this.cdr.detectChanges();
         },
       });
   }
 
   loadJobTitles(): void {
-    this.employeeService.getJobTitles().subscribe({
-      next: (response) => {
-        this.jobTitles = response || [];
-      },
-      error: (err) => console.error('[UIComponent] Failed to fetch job titles:', err),
-    });
+    this.employeeService.getJobTitles()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log('[UIComponent] Loaded job titles:', res);
+          this.jobTitles = [...(res || [])];
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('[UIComponent] Failed to fetch job titles:', err),
+      });
   }
 
   search(): void {
@@ -97,20 +114,32 @@ export class UIComponent implements OnInit {
     this.loadEmployees();
   }
 
-  sort(field: string): void {
-    if (this.sortBy === field) {
-      this.direction = this.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortBy = field;
-      this.direction = 'asc';
+
+
+  clearFilters(): void {
+    this.keyword = '';
+    this.selectedJobTitle = '';
+    this.sortBy = 'id';
+    this.direction = 'asc';
+    this.currentPage = 0;
+    this.loadEmployees();
+  }
+
+  onPageSizeChange(): void {
+    if (this.pageSize < 1) {
+      this.pageSize = 1;
     }
     this.currentPage = 0;
     this.loadEmployees();
   }
 
-  clearFilters(): void {
-    this.keyword = '';
-    this.selectedJobTitle = '';
+  sort(column: string): void {
+    if (this.sortBy === column) {
+      this.direction = this.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortBy = column;
+      this.direction = 'asc';
+    }
     this.currentPage = 0;
     this.loadEmployees();
   }
@@ -119,7 +148,6 @@ export class UIComponent implements OnInit {
     this.toastMessage = message;
     this.toastType = type;
     this.cdr.detectChanges();
-
     const toastEl = document.getElementById('liveToast');
     if (toastEl) {
       const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
@@ -127,7 +155,6 @@ export class UIComponent implements OnInit {
     }
   }
 
-  // ─── ADD ────────────────────────────────────────────────
   openAddModal(): void {
     this.formEmployee = { role: 'ROLE_EMPLOYEE', active: false };
     const modal = new bootstrap.Modal(document.getElementById('addModal')!);
@@ -138,7 +165,7 @@ export class UIComponent implements OnInit {
     this.employeeService.addEmployee(this.formEmployee as IEmployee).subscribe({
       next: (res) => {
         bootstrap.Modal.getInstance(document.getElementById('addModal')!)?.hide();
-        this.showToast(`Employee ${res.name} added successfully!`);
+        this.showToast(`Employee ${res.name} added successfully!`, 'success');
         this.loadEmployees();
         this.loadJobTitles();
       },
@@ -149,7 +176,6 @@ export class UIComponent implements OnInit {
     });
   }
 
-  // ─── EDIT ───────────────────────────────────────────────
   openEditModal(employee: IEmployee): void {
     this.formEmployee = { ...employee };
     const modal = new bootstrap.Modal(document.getElementById('editModal')!);
@@ -160,7 +186,7 @@ export class UIComponent implements OnInit {
     this.employeeService.updateEmployee(this.formEmployee as IEmployee).subscribe({
       next: (res) => {
         bootstrap.Modal.getInstance(document.getElementById('editModal')!)?.hide();
-        this.showToast(`Employee ${res.name} updated successfully!`);
+        this.showToast(`Employee ${res.name} updated successfully!`, 'success');
         this.loadEmployees();
         this.loadJobTitles();
       },
@@ -171,7 +197,6 @@ export class UIComponent implements OnInit {
     });
   }
 
-  // ─── DELETE ─────────────────────────────────────────────
   openDeleteModal(employee: IEmployee): void {
     this.selectedEmployee = employee;
     const modal = new bootstrap.Modal(document.getElementById('deleteModal')!);
@@ -185,7 +210,7 @@ export class UIComponent implements OnInit {
     this.employeeService.deleteEmployee(String(this.selectedEmployee.id)).subscribe({
       next: () => {
         bootstrap.Modal.getInstance(document.getElementById('deleteModal')!)?.hide();
-        this.showToast(`Employee ${name} deleted.`);
+        this.showToast(`Employee ${name} deleted.`, 'success');
         this.selectedEmployee = null;
         if (this.employees.length === 1 && this.currentPage > 0) {
           this.currentPage--;
