@@ -2,7 +2,6 @@ package derfeb.bloom.controller;
 
 import derfeb.bloom.model.Task;
 import derfeb.bloom.model.TaskStatus;
-import derfeb.bloom.service.EmployeeService;
 import derfeb.bloom.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,12 +19,10 @@ import java.time.LocalDate;
 @RequestMapping("/task")
 public class TaskResource {
     private final TaskService taskService;
-    private final EmployeeService employeeService;
 
     @Autowired
-    public TaskResource(TaskService taskService, EmployeeService employeeService) {
+    public TaskResource(TaskService taskService) {
         this.taskService = taskService;
-        this.employeeService = employeeService;
     }
 
     @GetMapping("/all")
