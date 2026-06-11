@@ -1,5 +1,6 @@
 package derfeb.bloom.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,5 +40,6 @@ public class Employee implements Serializable {
     private Role role;
 
     @Builder.Default 
-    private boolean isActive = false;
+    @JsonProperty("active")
+    private Boolean isActive = false;
 }
