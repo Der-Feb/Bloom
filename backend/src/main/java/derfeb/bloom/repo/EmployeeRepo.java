@@ -11,9 +11,9 @@ import java.util.Optional;
 
 public interface EmployeeRepo extends JpaRepository<Employee, Long> {
     
-    void deleteEmployeeById(Long id);
-    
     Optional<Employee> findEmployeeById(Long id);
+    
+    Optional<Employee> findEmployeeByEmail(String email);
 
     @Query("SELECT DISTINCT e.jobTitle FROM Employee e WHERE e.jobTitle IS NOT NULL")
     List<String> findDistinctJobTitles();
