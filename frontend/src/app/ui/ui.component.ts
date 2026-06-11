@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import * as bootstrap from 'bootstrap';
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-ui',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './ui.component.html',
@@ -31,6 +31,9 @@ export class UIComponent implements OnInit {
 
   formEmployee: Partial<IEmployee> = {};
   selectedEmployee: IEmployee | null = null;
+
+  toastMessage = '';
+  toastType: 'success' | 'danger' = 'success';
 
   constructor(
     private employeeService: EmployeeService,
@@ -65,12 +68,10 @@ export class UIComponent implements OnInit {
           }
           this.isLoaded = true;
           this.hasSearched = true;
-          this.cdr.detectChanges();
         },
         error: (err) => {
           this.isLoaded = true;
           this.hasSearched = true;
-          this.cdr.detectChanges();
           console.error('[UIComponent] Error loading employees:', err);
         },
       });
@@ -80,7 +81,6 @@ export class UIComponent implements OnInit {
     this.employeeService.getJobTitles().subscribe({
       next: (response) => {
         this.jobTitles = response || [];
-        this.cdr.detectChanges();
       },
       error: (err) => console.error('[UIComponent] Failed to fetch job titles:', err),
     });
@@ -115,6 +115,18 @@ export class UIComponent implements OnInit {
     this.loadEmployees();
   }
 
+  showToast(message: string, type: 'success' | 'danger' = 'success'): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.cdr.detectChanges();
+
+    const toastEl = document.getElementById('liveToast');
+    if (toastEl) {
+      const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+      toast.show();
+    }
+  }
+
   // ─── ADD ────────────────────────────────────────────────
   openAddModal(): void {
     this.formEmployee = { role: 'ROLE_EMPLOYEE', active: false };
@@ -124,12 +136,16 @@ export class UIComponent implements OnInit {
 
   submitAdd(): void {
     this.employeeService.addEmployee(this.formEmployee as IEmployee).subscribe({
-      next: () => {
+      next: (res) => {
         bootstrap.Modal.getInstance(document.getElementById('addModal')!)?.hide();
+        this.showToast(`Employee ${res.name} added successfully!`);
         this.loadEmployees();
         this.loadJobTitles();
       },
-      error: (err) => console.error('[UIComponent] Add failed:', err),
+      error: (err) => {
+        console.error('[UIComponent] Add failed:', err);
+        this.showToast('Failed to add employee.', 'danger');
+      },
     });
   }
 
@@ -142,12 +158,16 @@ export class UIComponent implements OnInit {
 
   submitEdit(): void {
     this.employeeService.updateEmployee(this.formEmployee as IEmployee).subscribe({
-      next: () => {
+      next: (res) => {
         bootstrap.Modal.getInstance(document.getElementById('editModal')!)?.hide();
+        this.showToast(`Employee ${res.name} updated successfully!`);
         this.loadEmployees();
         this.loadJobTitles();
       },
-      error: (err) => console.error('[UIComponent] Update failed:', err),
+      error: (err) => {
+        console.error('[UIComponent] Update failed:', err);
+        this.showToast('Failed to update employee.', 'danger');
+      },
     });
   }
 
@@ -160,17 +180,22 @@ export class UIComponent implements OnInit {
 
   submitDelete(): void {
     if (!this.selectedEmployee?.id) return;
+    const name = this.selectedEmployee.name;
 
     this.employeeService.deleteEmployee(String(this.selectedEmployee.id)).subscribe({
       next: () => {
         bootstrap.Modal.getInstance(document.getElementById('deleteModal')!)?.hide();
+        this.showToast(`Employee ${name} deleted.`);
         this.selectedEmployee = null;
         if (this.employees.length === 1 && this.currentPage > 0) {
           this.currentPage--;
         }
         this.loadEmployees();
       },
-      error: (err) => console.error('[UIComponent] Delete failed:', err),
+      error: (err) => {
+        console.error('[UIComponent] Delete failed:', err);
+        this.showToast('Failed to delete employee.', 'danger');
+      },
     });
   }
 }
